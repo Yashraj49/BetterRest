@@ -45,9 +45,29 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Calculate", action: calculateBedtime)
+                    Button("Calculate") {
+                        if let calculatedBedtime = calculateBedtime(wakeUp: wakeUp, sleepAmount: sleepAmount, coffeeAmount: coffeeAmount) {
+                            self.calculatedBedtime = calculatedBedtime
+                        } else {
+                            alertTitle = "Error"
+                            alertMessage = "Sorry, there was a problem calculating your bedtime."
+                            showingAlert = true
+                        }
+                    }
+                }
+            }.toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        wakeUp = Self.defaultWakeTime
+                        sleepAmount = 8.0
+                        coffeeAmount = 1
+                        calculatedBedtime = nil
+                    }
                 }
             }
+
+            
+            
             .alert(alertTitle, isPresented: $showingAlert) {
                 Button("OK") { }
             } message: {
@@ -56,30 +76,13 @@ struct ContentView: View {
             
         }
         .onAppear {
-            self.calculateBedtime()
+            self.calculatedBedtime
         }
     }
 
-    func calculateBedtime() {
-        do {
-            let config = MLModelConfiguration()
-            let model = try SleepCalculator(configuration: config)
 
-            let components = Calendar.current.dateComponents([.hour, .minute], from: wakeUp)
-            let hour = (components.hour ?? 0) * 60 * 60
-            let minute = (components.minute ?? 0) * 60
-
-            let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeeAmount))
-
-            let sleepTime = wakeUp - prediction.actualSleep
-            calculatedBedtime = sleepTime.formatted(date: .omitted, time: .shortened)
-        } catch {
-            alertTitle = "Error"
-            alertMessage = "Sorry, there was a problem calculating your bedtime."
-            showingAlert = true
-        }
-    }
 }
+
 
 
 struct ContentView_Previews: PreviewProvider {
@@ -87,3 +90,6 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+
+
